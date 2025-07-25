@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>India City COVID Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      /* 🌈 Animated Gradient Background */
+      background: linear-gradient(-45deg, #00c9ff, #92fe9d, #fcb045, #fd1d1d);
+      background-size: 600% 600%;
+      animation: gradientAnimation 15s ease infinite;
+    }
+
+    @keyframes gradientAnimation {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(-30px);
+      transition: all 0.6s ease;
+    }
+
+    .card.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    input {
+      width: 80%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #output {
+      margin-top: 20px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card" id="trackerCard">
+    <h2>🦠 COVID Tracker</h2>
+    <input type="text" id="cityInput" placeholder="Enter district/city (e.g. Surat)" />
+    <button onclick="getdata()">COVID Data</button>
+    <div id="output"></div>
+  </div>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+  <script>
+    $(document).ready(function () {
+      $('#trackerCard').addClass('show');
+    });
+
+    function getdata() {
+      let city = document.getElementById("cityInput").value.trim().toLowerCase();
+      let outputDiv = $("#output");
+
+      if (city === "") {
+        outputDiv.html('<p style="color:red;">Please enter a district/city name.</p>').slideDown();
+        return;
+      }
+
+      $.ajax({
+        url: 'https://data.incovid19.org/v4/min/data.min.json',
+        type: 'GET',
+        success: function(data) {
+          let found = false;
+
+          for (let stateCode in data) {
+            let state = data[stateCode];
+            if (state.districts) {
+              for (let districtName in state.districts) {
+                if (districtName.toLowerCase() === city) {
+                  let districtData = state.districts[districtName].total;
+                  outputDiv
+                    .html(`
+                      <h3>${districtName}, ${stateCode}</h3>
+                      <p><strong>Confirmed:</strong> ${districtData.confirmed || 0}</p>
+                      <p><strong>Recovered:</strong> ${districtData.recovered || 0}</p>
+                      <p><strong>Deceased:</strong> ${districtData.deceased || 0}</p>
+                    `)
+                    .hide()
+                    .slideDown(500);
+                  found = true;
+                  break;
+                }
+              }
+            }
+            if (found) break;
+          }
+
+          if (!found) {
+            outputDiv
+              .html('<p style="color:red;">City not found. Please check spelling.</p>')
+              .hide()
+              .slideDown(400);
+          }
+        },
+        error: function() {
+          outputDiv
+            .html('<p style="color:red;">Failed to fetch data. Try again later.</p>')
+            .hide()
+            .slideDown(400);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
